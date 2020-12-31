@@ -5,10 +5,13 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
+#include <unistd.h>
+
+#define READING_BUFF_SIZE 2048
 
 int main(int argc, char* argv[]) 
 {
-    char*               IP = "localhost";
+    std::string         IP = "127.0.0.1";
     int                 PORT = 54321;
 
     int                 socketFd;
@@ -18,7 +21,7 @@ int main(int argc, char* argv[])
     struct sockaddr_in  clientAddress;
     socklen_t           clientAddressLength = sizeof(clientAddress);
 
-    char                buffer[2048];
+    char                buffer[READING_BUFF_SIZE];
     int                 bytesRead;
 
     char*               dataToSend;
@@ -30,24 +33,26 @@ int main(int argc, char* argv[])
     // Note: In a real server all the printing should be log entries instead
 
     // Create a new IPv4 TCP socket
-    socketFd = socket(AF_INET, SOCK_STREAM, NULL);
+    socketFd = socket(AF_INET, SOCK_STREAM, 0);
     if (socketFd < 0)
     {
+        std::cerr << "Couldn't open a new socket" << std::endl;
         throw std::system_error();
     }
 
     // Prepare the sockaddr_in struct with the server's socket address (AKA ip & port)
     serverAdress.sin_family = AF_INET;
     serverAdress.sin_port = htons(PORT);  // convert PORT to network order (big endian)
-    if (inet_aton(IP, &serverAdress.sin_addr) == 0)
+    if (inet_aton(IP.c_str(), &serverAdress.sin_addr) == 0)
     {
         std::cerr << "ERROR - Address is not valid" << std::endl;
-        throw std::system_error();
+        return 1;
     }
 
     // bind() assigns the socket to an IP address and a port
     if (bind(socketFd, (const sockaddr *) &serverAdress, sizeof(serverAdress)) < 0)
     {
+        std::cerr << "Call to bind() with IP=" << IP << " and port=" << PORT << " failed" << std::endl;
         throw std::system_error();
     }
 
@@ -69,7 +74,7 @@ int main(int argc, char* argv[])
     std::cout << "Got a connection! From " << inet_ntoa(clientAddress.sin_addr) << ":" << ntohs(clientAddress.sin_port) << std::endl;
 
     // Read data the client sent. read() call is blocking
-    if ((bytesRead = read(clientSocketFd, buffer, 2048)) < 0)  // can also use recv(...)
+    if ((bytesRead = read(clientSocketFd, buffer, READING_BUFF_SIZE)) < 0)  // can also use recv(...)
     {
         /*
          * For simplification the server will terminate if can't read data from the client,
@@ -79,11 +84,19 @@ int main(int argc, char* argv[])
         throw std::system_error();
     }
 
+    // TODO check if need to add NULL terminator
+    // Seems there is no need, but might in the future.
+    // Won't implement now cause I'm super lazy 🙃
+
+    std::cout << "Got message: \"" << buffer << "\"!!!" << std::endl;
+
     /******* LOGIC ******/
     // Echo server, returning what the client sent
     dataToSend = buffer;
     dataToSendLength = bytesRead;
     /****** END LOGIC *****/
+
+    std::cout << "Going to send back message: \"" << dataToSend << "\"" << std::endl;
 
     while (totalBytesWritten < dataToSendLength)
     {
