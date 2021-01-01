@@ -1,4 +1,9 @@
-// Created by Tomer Gill on 2020-12-31
+/**
+ * @file echo_server_all_in_one.cpp
+ * @author Tomer Gill
+ * @brief Simple Echo server that receives one message and replies it back
+ * @date 2020-12-31
+ */
 
 #include <iostream>
 #include <sys/types.h>

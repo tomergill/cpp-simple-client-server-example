@@ -52,7 +52,7 @@ MyServer::~MyServer()
     }
 }
 
-void MyServer::handleOneClient()
+void MyServer::handleOneClient(AnsweringLogic &logic)
 {
     if (m_socket_fd < 0)
     {
@@ -65,9 +65,11 @@ void MyServer::handleOneClient()
     char buffer[READING_BUFF_SIZE];
     int bytesRead;
 
-    char *dataToSend;
+    const char *dataToSend;
     int dataToSendLength;
     int bytesWritten = 0, totalBytesWritten = 0;
+
+    std::string reply;
 
     // Listen for new connections
     // 0 means that no clients will wait in the queue for the server AKA their connections will be refused
@@ -111,11 +113,10 @@ void MyServer::handleOneClient()
 
         std::cout << "Got message: \"" << buffer << "\"!!!" << std::endl;
 
-        /******* LOGIC ******/
-        // Echo server, returning what the client sent
-        dataToSend = buffer;
-        dataToSendLength = bytesRead;
-        /****** END LOGIC *****/
+        // We let our AnsweringLogic decide what to reply. Each call to handleOneClient can use a different Answering logic without changing the server code!
+        reply = logic.generateReply(buffer, bytesRead);
+        dataToSend = reply.c_str();
+        dataToSendLength = reply.size();
 
         std::cout << "Going to send back message: \"" << dataToSend << "\"" << std::endl;
 

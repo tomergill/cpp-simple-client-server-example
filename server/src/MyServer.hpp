@@ -10,6 +10,8 @@
 #include <arpa/inet.h>
 #include <unistd.h>
 
+#include "AnsweringLogic/AnsweringLogic.hpp"
+
 #define READING_BUFF_SIZE 2048
 
 /**
@@ -32,7 +34,7 @@ public:
     MyServer(std::string ip = "127.0.0.1", int port = 54321);
 
     /**
-     * @brief Creats a socket and binds it to an address
+     * @brief Creates a socket and binds it to an address
      * 
      */
     void initialize();
@@ -40,8 +42,9 @@ public:
     /**
      * @brief Accepts a new connections from one (1) client and handles the conversation until it finished. Need to call initialize() first
      * 
+     * @param logic Component for reply logic (decides what to reply the client's messages)
      */
-    void handleOneClient();
+    void handleOneClient(AnsweringLogic &logic);
 
     ~MyServer();
 };
