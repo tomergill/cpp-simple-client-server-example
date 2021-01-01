@@ -26,6 +26,13 @@ int main(int argc, char *argv[])
     char buffer[RECV_BUFFER_LENGTH];
     int bytesRead;
 
+    if (argc < 3)
+    {
+        throw std::invalid_argument("Not enough arguments! Please provide the server's ip and port.\nUsage: MyClient IP PORT");
+    }
+    ip = argv[1];
+    port = atoi(argv[2]);
+
     std::cout << "Client setting up" << std::endl
               << "Creating Socket..." << std::endl;
 
