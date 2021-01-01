@@ -65,31 +65,37 @@ int main(int argc, char *argv[])
     std::cout << "Connected!" << std::endl;
 
     // Now it is time to send data to the server
-    messageToSend = "Hello, World!";
-    dataToSend = messageToSend.c_str();
-    dataToSendLength = messageToSend.length();
+    std::cout << "Enter message here and the press ENTER! Enter 'quit' to exit and stop the connection:" << std::endl;
+    std::getline(std::cin, messageToSend);
+    while (messageToSend != "quit")
+    {
+        dataToSend = messageToSend.c_str();
+        dataToSendLength = messageToSend.length();
 
-    std::cout << "Sending message \"" << messageToSend << "\"!" << std::endl;
-    if ((bytesWritten = send(socket_fd, dataToSend, dataToSendLength, 0)) < 0) // can also use write()
-    {
-        throw std::system_error(errno, std::generic_category(), "Error sending message to client");
-    } 
-    else if (bytesWritten < dataToSendLength)
-    {
-        std::cerr << "Didn't send all data, only \"" << messageToSend.substr(0, bytesWritten) << "\" (" << bytesWritten << " Bytes)" << std::endl;
-        
-        // Won't exit here, the server will reply to whatever data we sent
+        if ((bytesWritten = send(socket_fd, dataToSend, dataToSendLength, 0)) < 0) // can also use write()
+        {
+            throw std::system_error(errno, std::generic_category(), "Error sending message to client");
+        }
+        else if (bytesWritten < dataToSendLength)
+        {
+            std::cerr << "Didn't send all data, only \"" << messageToSend.substr(0, bytesWritten) << "\" (" << bytesWritten << " Bytes)" << std::endl;
+
+            // Won't exit here, the server will reply to whatever data we sent
+        }
+
+        bzero(buffer, RECV_BUFFER_LENGTH); // zero the buffer (clear it)
+        // Now let's see the server's response...
+        if ((bytesRead = recv(socket_fd, buffer, RECV_BUFFER_LENGTH - 1, 0) < 0)) // can also use read()
+        {
+            throw std::system_error(errno, std::generic_category(), "Error reading server's response");
+        }
+
+        std::cout << "Server's reply: \"" << buffer << "\"" << std::endl
+                  << std::endl;
+
+        std::cout << "Enter message here and the press ENTER! Empty message (just ENTER) will stop the connection:" << std::endl;
+        std::cin >> messageToSend;
     }
-
-    bzero(buffer, RECV_BUFFER_LENGTH); // zero the buffer (clean)
-    // Now let's see the server's response...
-    if ((bytesRead = recv(socket_fd, buffer, RECV_BUFFER_LENGTH, 0) < 0)) // can also use read()
-    {
-        throw std::system_error(errno, std::generic_category(), "Error reading server's response");
-    }
-
-    // TODO should add null-terminator in case buffer is all full, could be a problem
-    std::cout << "Got a reply: \"" << buffer << "\"" << std::endl;
 
     std::cout << "Client shutting down..." << std::endl;
 
