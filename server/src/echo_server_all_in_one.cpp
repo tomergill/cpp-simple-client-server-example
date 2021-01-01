@@ -40,8 +40,8 @@ int main(int argc, char *argv[])
     socketFd = socket(AF_INET, SOCK_STREAM, 0);
     if (socketFd < 0)
     {
-        std::cerr << "Couldn't open a new socket" << std::endl;
-        throw std::system_error();  // This exception parses ERRNO for us and explains what the error is
+        // This parses ERRNO for us and explains what the error is
+        throw std::system_error(errno, std::generic_category(), "Couldn't open a new socket");
     }
 
     // Prepare the sockaddr_in struct with the server's socket address (AKA ip & port)
@@ -56,22 +56,21 @@ int main(int argc, char *argv[])
     // bind() assigns the socket to an IP address and a port
     if (bind(socketFd, (const sockaddr *)&serverAdress, sizeof(serverAdress)) < 0)
     {
-        std::cerr << "Call to bind() with IP=" << IP << " and port=" << PORT << " failed" << std::endl;
-        throw std::system_error();
+        throw std::system_error(errno, std::generic_category(), "Call to bind() failed");
     }
 
     // Listen for new connections
     // 0 means that no clients will wait in the queue for the server AKA their connections will be refused
     if (listen(socketFd, 0) < 0)
     {
-        throw std::system_error();
+        throw std::system_error(errno, std::generic_category(), "Error when listening to new connections");
     }
 
     // Ooh a new connection! Let's accept it
     // This will create a new socket and establish a TCP connection between it and the client('s socket)
     if ((clientSocketFd = accept(socketFd, (sockaddr *)&clientAddress, &clientAddressLength)) < 0)
     {
-        throw std::system_error();
+        throw std::system_error(errno, std::generic_category(), "Error accepting new connection");
     }
 
     // Log the client's address
@@ -85,7 +84,7 @@ int main(int argc, char *argv[])
          * but in actual servers we will probably want to only terminate the connection to the client - 
          * the server should continue to serve!
          */
-        throw std::system_error();
+        throw std::system_error(errno, std::generic_category(), "Error reading data from connection socket");
     }
 
     // TODO check if need to add NULL terminator
@@ -106,7 +105,7 @@ int main(int argc, char *argv[])
     {
         if ((bytesWritten = write(clientSocketFd, dataToSend, dataToSendLength)) < 0) // can also use send(...)
         {
-            throw std::system_error();
+            throw std::system_error(errno, std::generic_category(), "Error writing to socket");
         }
         totalBytesWritten += bytesWritten;
     }

@@ -18,8 +18,8 @@ void MyServer::initialize()
     m_socket_fd = socket(AF_INET, SOCK_STREAM, 0);
     if (m_socket_fd < 0)
     {
-        std::cerr << "Couldn't open a new socket" << std::endl;
-        throw std::system_error(); // This exception parses ERRNO for us and explains what the error is
+        // This exception parses ERRNO for us and explains what the error is
+        throw std::system_error(errno, std::generic_category(), "Couldn't open a new socket");
     }
 
     // Prepare the sockaddr_in struct with the server's socket address (AKA ip & port)
@@ -35,8 +35,7 @@ void MyServer::initialize()
     // bind() assigns the socket to an IP address and a port
     if (bind(m_socket_fd, (const sockaddr *)&serverAdress, sizeof(serverAdress)) < 0)
     {
-        std::cerr << "Call to bind() with IP=" << m_ip << " and port=" << m_port << " failed" << std::endl;
-        throw std::system_error();
+        throw std::system_error(errno, std::generic_category(), "Call to bind() failed");
     }
 
     std::cout << "Setup successful! Can now handle connections on address " << m_ip << ":" << m_port << std::endl;
@@ -75,14 +74,14 @@ void MyServer::handleOneClient(AnsweringLogic &logic)
     // 0 means that no clients will wait in the queue for the server AKA their connections will be refused
     if (listen(m_socket_fd, 0) < 0)
     {
-        throw std::system_error();
+        throw std::system_error(errno, std::generic_category(), "Error when listening to new connections");
     }
 
     // Ooh a new connection! Let's accept it
     // This will create a new socket and establish a TCP connection between it and the client('s socket)
     if ((m_client_socket_fd = accept(m_socket_fd, (sockaddr *)&clientAddress, &clientAddressLength)) < 0)
     {
-        throw std::system_error();
+        throw std::system_error(errno, std::generic_category(), "Error accepting new connection");
     }
 
     // Log the client's address
@@ -99,7 +98,7 @@ void MyServer::handleOneClient(AnsweringLogic &logic)
                 * but in actual servers we will probably want to only terminate the connection to the client - 
                 * the server should continue to serve!
                 */
-            throw std::system_error();
+            throw std::system_error(errno, std::generic_category(), "Error reading from connection socket");
         }
         else if (bytesRead == 0)
         {
@@ -126,7 +125,7 @@ void MyServer::handleOneClient(AnsweringLogic &logic)
         {
             if ((bytesWritten = write(m_client_socket_fd, dataToSend, dataToSendLength)) < 0) // can also use send(...)
             {
-                throw std::system_error();
+                throw std::system_error(errno, std::generic_category(), "Error writing data to socket");
             }
             totalBytesWritten += bytesWritten;
         }

@@ -33,8 +33,7 @@ int main(int argc, char *argv[])
     socket_fd = socket(AF_INET, SOCK_STREAM, 0);
     if (socket_fd < 0)
     {
-        std::cerr << "Couldn't open a new socket" << std::endl;
-        throw std::system_error();
+        throw std::system_error(errno, std::generic_category(), "Couldn't open a new socket");
     }
 
     // Prepare the sockaddr_in struct with the server's socket address (AKA ip & port) so we can connect to it
@@ -54,8 +53,7 @@ int main(int argc, char *argv[])
 
     if (connect(socket_fd, (struct sockaddr *)&serverAdress, sizeof(serverAdress)) < 0)
     {
-        std::cerr << "ERROR - Could not connect to server" << std::endl;
-        throw std::system_error();
+        throw std::system_error(errno, std::generic_category(), "Could not connect to server");
     }
     std::cout << "Connected!" << std::endl;
 
@@ -67,8 +65,7 @@ int main(int argc, char *argv[])
     std::cout << "Sending message \"" << messageToSend << "\"!" << std::endl;
     if ((bytesWritten = send(socket_fd, dataToSend, dataToSendLength, 0)) < 0) // can also use write()
     {
-        std::cerr << "Error sending message to client" << std::endl;
-        throw std::system_error();
+        throw std::system_error(errno, std::generic_category(), "Error sending message to client");
     } 
     else if (bytesWritten < dataToSendLength)
     {
@@ -81,13 +78,11 @@ int main(int argc, char *argv[])
     // Now let's see the server's response...
     if ((bytesRead = recv(socket_fd, buffer, RECV_BUFFER_LENGTH, 0) < 0)) // can also use read()
     {
-        std::cerr << "Error reading server's response" << std::endl;
-        throw std::system_error();
+        throw std::system_error(errno, std::generic_category(), "Error reading server's response");
     }
 
-    std::cout << "Got a reply: \"" << std::string(buffer, bytesRead) << "\"" << std::endl;
-
-    std::cout << "Read " << bytesRead << "bytes." << buffer << std::endl; // TODO remove this
+    // TODO should add null-terminator in case buffer is all full, could be a problem
+    std::cout << "Got a reply: \"" << buffer << "\"" << std::endl;
 
     std::cout << "Client shutting down..." << std::endl;
 
