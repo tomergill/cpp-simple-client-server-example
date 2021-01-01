@@ -12,14 +12,14 @@ void MyServer::initialize()
 {
     struct sockaddr_in serverAdress;
     std::cout << "Server setting up" << std::endl
-              << "Creating socket...";
+              << "Creating socket..." << std::endl;
 
     // Create a new IPv4 TCP socket
     m_socket_fd = socket(AF_INET, SOCK_STREAM, 0);
     if (m_socket_fd < 0)
     {
         std::cerr << "Couldn't open a new socket" << std::endl;
-        throw std::system_error();
+        throw std::system_error(); // This exception parses ERRNO for us and explains what the error is
     }
 
     // Prepare the sockaddr_in struct with the server's socket address (AKA ip & port)
@@ -27,7 +27,7 @@ void MyServer::initialize()
     serverAdress.sin_port = htons(m_port); // convert PORT to network order (big endian)
     if (inet_aton(m_ip.c_str(), &serverAdress.sin_addr) == 0)
     {
-        throw std::invalid_argument("Address is not valid");
+        throw std::invalid_argument("IP Address is not valid");
     }
 
     std::cout << "Binding socket to address & port..." << std::endl;
@@ -48,7 +48,7 @@ MyServer::~MyServer()
     // This is in accordance to RAII (https://en.wikipedia.org/wiki/Resource_acquisition_is_initialization)
     if (close(m_socket_fd) < 0)
     {
-        std::cerr << "ERROR - closing server's main socket failed" << std::endl;
+        std::cerr << "ERROR - closing server's main socket failed: "<< std::strerror(errno) << std::endl;
     }
 }
 
@@ -90,6 +90,7 @@ void MyServer::handleOneClient(AnsweringLogic &logic)
 
     while (true)
     {
+        bzero(buffer, READING_BUFF_SIZE); // zero the buffer (clean it)
         // Read data the client sent. read() call is blocking
         if ((bytesRead = read(m_client_socket_fd, buffer, READING_BUFF_SIZE)) < 0) // can also use recv(...)
         {
@@ -99,12 +100,12 @@ void MyServer::handleOneClient(AnsweringLogic &logic)
                 * the server should continue to serve!
                 */
             throw std::system_error();
-        } 
+        }
         else if (bytesRead == 0)
         {
             // Read no bytes - either connection has closed or client taking too long
             // Let's exit
-            break;  // Why break and not return? because we still need to close the client socket
+            break; // Why break and not return? because we still need to close the client socket
         }
 
         // TODO check if need to add NULL terminator
@@ -120,6 +121,7 @@ void MyServer::handleOneClient(AnsweringLogic &logic)
 
         std::cout << "Going to send back message: \"" << dataToSend << "\"" << std::endl;
 
+        // There is a possibility that not all data will be sent, so we want to continue send it until finishes
         while (totalBytesWritten < dataToSendLength)
         {
             if ((bytesWritten = write(m_client_socket_fd, dataToSend, dataToSendLength)) < 0) // can also use send(...)
@@ -133,6 +135,6 @@ void MyServer::handleOneClient(AnsweringLogic &logic)
     // Finished talking to client? Let's close the socket
     if (close(m_client_socket_fd) < 0)
     {
-        std::cerr << "ERROR - closing client-specific socket failed" << std::endl;
+        std::cerr << "ERROR - closing client-specific socket failed: " << std::strerror(errno) << std::endl;
     }
 }

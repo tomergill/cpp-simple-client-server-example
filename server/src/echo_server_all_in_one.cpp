@@ -41,7 +41,7 @@ int main(int argc, char *argv[])
     if (socketFd < 0)
     {
         std::cerr << "Couldn't open a new socket" << std::endl;
-        throw std::system_error();
+        throw std::system_error();  // This exception parses ERRNO for us and explains what the error is
     }
 
     // Prepare the sockaddr_in struct with the server's socket address (AKA ip & port)
