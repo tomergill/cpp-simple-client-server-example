@@ -44,6 +44,8 @@ void MyServer::initialize()
 
 MyServer::~MyServer()
 {
+    // In dtor we close/release all the resources our object is in charge of - in our case, the server's main socket
+    // This is in accordance to RAII (https://en.wikipedia.org/wiki/Resource_acquisition_is_initialization)
     if (close(m_socket_fd) < 0)
     {
         std::cerr << "ERROR - closing server's main socket failed" << std::endl;
@@ -84,38 +86,47 @@ void MyServer::handleOneClient()
     // Log the client's address
     std::cout << "Got a connection! From " << inet_ntoa(clientAddress.sin_addr) << ":" << ntohs(clientAddress.sin_port) << std::endl;
 
-    // Read data the client sent. read() call is blocking
-    if ((bytesRead = read(m_client_socket_fd, buffer, READING_BUFF_SIZE)) < 0) // can also use recv(...)
+    while (true)
     {
-        /*
-            * For simplification the server will terminate if can't read data from the client,
-            * but in actual servers we will probably want to only terminate the connection to the client - 
-            * the server should continue to serve!
-            */
-        throw std::system_error();
-    }
-
-    // TODO check if need to add NULL terminator
-    // Seems there is no need, but might in the future.
-    // Won't implement now cause I'm super lazy 🙃
-
-    std::cout << "Got message: \"" << buffer << "\"!!!" << std::endl;
-
-    /******* LOGIC ******/
-    // Echo server, returning what the client sent
-    dataToSend = buffer;
-    dataToSendLength = bytesRead;
-    /****** END LOGIC *****/
-
-    std::cout << "Going to send back message: \"" << dataToSend << "\"" << std::endl;
-
-    while (totalBytesWritten < dataToSendLength)
-    {
-        if ((bytesWritten = write(m_client_socket_fd, dataToSend, dataToSendLength)) < 0) // can also use send(...)
+        // Read data the client sent. read() call is blocking
+        if ((bytesRead = read(m_client_socket_fd, buffer, READING_BUFF_SIZE)) < 0) // can also use recv(...)
         {
+            /*
+                * For simplification the server will terminate if can't read data from the client,
+                * but in actual servers we will probably want to only terminate the connection to the client - 
+                * the server should continue to serve!
+                */
             throw std::system_error();
+        } 
+        else if (bytesRead == 0)
+        {
+            // Read no bytes - either connection has closed or client taking too long
+            // Let's exit
+            break;  // Why break and not return? because we still need to close the client socket
         }
-        totalBytesWritten += bytesWritten;
+
+        // TODO check if need to add NULL terminator
+        // Seems there is no need, but might in the future.
+        // Won't implement now cause I'm super lazy 🙃
+
+        std::cout << "Got message: \"" << buffer << "\"!!!" << std::endl;
+
+        /******* LOGIC ******/
+        // Echo server, returning what the client sent
+        dataToSend = buffer;
+        dataToSendLength = bytesRead;
+        /****** END LOGIC *****/
+
+        std::cout << "Going to send back message: \"" << dataToSend << "\"" << std::endl;
+
+        while (totalBytesWritten < dataToSendLength)
+        {
+            if ((bytesWritten = write(m_client_socket_fd, dataToSend, dataToSendLength)) < 0) // can also use send(...)
+            {
+                throw std::system_error();
+            }
+            totalBytesWritten += bytesWritten;
+        }
     }
 
     // Finished talking to client? Let's close the socket

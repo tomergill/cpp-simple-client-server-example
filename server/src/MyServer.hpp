@@ -38,7 +38,7 @@ public:
     void initialize();
 
     /**
-     * @brief Accepts a new connections from one (1) client and handles the conversation until it finished. Need to call initalize() first
+     * @brief Accepts a new connections from one (1) client and handles the conversation until it finished. Need to call initialize() first
      * 
      */
     void handleOneClient();
