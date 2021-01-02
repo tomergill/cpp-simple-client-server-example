@@ -18,11 +18,11 @@ int main(int argc, char *argv[])
 
     if (argc == 3)
     {
-        server = MyServer(argv[1], atoi(argv[2]));  // ip, port
+        server = MyServer(argv[1], atoi(argv[2])); // ip, port
     }
     else if (argc == 2)
     {
-        server = MyServer("127.0.0.1", atoi(argv[1]));  // ip, port
+        server = MyServer("127.0.0.1", atoi(argv[1])); // ip, port
     }
 
     server.initialize();

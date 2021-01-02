@@ -47,7 +47,7 @@ MyServer::~MyServer()
     // This is in accordance to RAII (https://en.wikipedia.org/wiki/Resource_acquisition_is_initialization)
     if (close(m_socket_fd) < 0)
     {
-        std::cerr << "ERROR - closing server's main socket failed: "<< std::strerror(errno) << std::endl;
+        std::cerr << "ERROR - closing server's main socket failed: " << std::strerror(errno) << std::endl;
     }
 }
 

@@ -17,7 +17,7 @@
  * At any time the server can decide to change implementations with minimum code change
  * 
  */
-class AnsweringLogic 
+class AnsweringLogic
 {
 public:
     /**
@@ -27,7 +27,7 @@ public:
      * @param length Size of message
      * @return std::string The reply
      */
-    virtual std::string generateReply(char* receivedMessage, int length) = 0;
+    virtual std::string generateReply(char *receivedMessage, int length) = 0;
 };
 
 #endif
